@@ -1,0 +1,161 @@
+import java.util.Scanner;
+
+class Account {
+    int accountNumber;
+    String name, email, phone;
+    double balance;
+
+    void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            System.out.println("Deposited ₹" + amount + ". New Balance: ₹" + balance);
+        } else {
+            System.out.println("Amount must be positive!");
+        }
+    }
+
+    void withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            System.out.println("Withdrawn ₹" + amount + ". Remaining Balance: ₹" + balance);
+        } else {
+            System.out.println("Invalid amount or insufficient balance!");
+        }
+    }
+
+    void display() {
+        System.out.println("\nAccount No: " + accountNumber);
+        System.out.println("Holder Name: " + name);
+        System.out.println("Balance: ₹" + balance);
+        System.out.println("Email: " + email);
+        System.out.println("Phone: " + phone);
+    }
+
+    void updateContact(String newEmail, String newPhone) {
+        email = newEmail;
+        phone = newPhone;
+        System.out.println("Contact details updated!");
+    }
+}
+
+class BankingApp {
+    Account[] accounts = new Account[100];
+    int count = 0;
+    Scanner sc = new Scanner(System.in);
+
+    Account findAccount(int accNo) {
+        for (int i = 0; i < count; i++) {
+            if (accounts[i].accountNumber == accNo)
+                return accounts[i];
+        }
+        return null;
+    }
+
+    void createAccount() {
+        Account acc = new Account();
+        acc.accountNumber = 1001 + count;
+        System.out.print("Enter Name: "); 
+        acc.name = sc.nextLine();
+        System.out.print("Enter Initial Deposit: "); 
+        acc.balance = sc.nextDouble(); sc.nextLine();
+        System.out.print("Enter Email: "); 
+        acc.email = sc.nextLine();
+        System.out.print("Enter Phone: "); 
+        acc.phone = sc.nextLine();
+        accounts[count++] = acc;
+        System.out.println("Account created! Your Account No: " + acc.accountNumber);
+    }
+
+    void depositMoney() {
+        System.out.print("Enter Account No: "); 
+        int accNo = sc.nextInt();
+        System.out.print("Enter Amount: "); 
+        double amt = sc.nextDouble(); sc.nextLine();
+        Account acc = findAccount(accNo);
+        if (acc != null) acc.deposit(amt);
+        else System.out.println("Account not found!");
+    }
+
+    void withdrawMoney() {
+        System.out.print("Enter Account No: "); 
+        int accNo = sc.nextInt();
+        System.out.print("Enter Amount: "); 
+        double amt = sc.nextDouble(); sc.nextLine();
+        Account acc = findAccount(accNo);
+        if (acc != null) acc.withdraw(amt);
+        else System.out.println("Account not found!");
+    }
+
+    void viewAccount() {
+        System.out.print("Enter Account No: "); 
+        int accNo = sc.nextInt(); sc.nextLine();
+        Account acc = findAccount(accNo);
+        if (acc != null) acc.display();
+        else System.out.println("Account not found!");
+    }
+
+    void updateContact() {
+        System.out.print("Enter Account No: "); 
+        int accNo = sc.nextInt(); sc.nextLine();
+        Account acc = findAccount(accNo);
+        if (acc != null) {
+            System.out.print("Enter New Email: "); 
+            String email = sc.nextLine();
+            System.out.print("Enter New Phone: "); 
+            String phone = sc.nextLine();
+            acc.updateContact(email, phone);
+        } else {
+            System.out.println("Account not found!");
+        }
+    }
+
+    void menu() {
+        int choice;
+        do {
+            System.out.println("\n--- Banking System Menu ---");
+            System.out.println("1. Create Account");
+            System.out.println("2. Deposit Money");
+            System.out.println("3. Withdraw Money");
+            System.out.println("4. View Account");
+            System.out.println("5. Update Contact");
+            System.out.println("6. Exit");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt(); sc.nextLine();
+
+            switch (choice) {
+                case 1: createAccount(); break;
+                case 2: depositMoney(); break;
+                case 3: withdrawMoney(); break;
+                case 4: viewAccount(); break;
+                case 5: updateContact(); break;
+                case 6: System.out.println("Exiting..."); break;
+                default: System.out.println("Invalid choice!");
+            }
+        } while (choice != 6);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        BankingApp app = new BankingApp();
+        app.menu();
+    }
+}
+do {
+    System.out.println("\n1.Create 2.Deposit 3.Withdraw 4.View 5.Update 6.Exit");
+    System.out.print("Enter Choice: ");
+    choice = sc.nextInt(); sc.nextLine();
+    switch (choice) {
+        case 1 -> createAccount();
+        case 2 -> depositMoney();
+        case 3 -> withdrawMoney();
+        case 4 -> viewAccount();
+        case 5 -> updateContact();
+        case 6 -> System.out.println("Goodbye!");
+        default -> System.out.println("Invalid Choice!");
+    }
+} while (choice != 6);
+
+public static void main(String[] args) {
+    new BankingApp().menu();
+}
