@@ -1,119 +1,150 @@
 import java.io.*;
 import java.util.*;
 
-class Book {
-    int bookId; String title, author, category; boolean isIssued;
-    Book(int id, String t, String a, String c) { bookId=id; title=t; author=a; category=c; }
-    void displayBookDetails(){ System.out.println(bookId+" "+title+" "+author+" "+category+" "+(isIssued?"Issued":"Available")); }
-    void markAsIssued(){ isIssued=true; }
-    void markAsReturned(){ isIssued=false; }
+class Book implements Comparable<Book> {
+    int id; String title, author, category; boolean issued;
+    Book(int id, String t, String a, String c){
+        this.id=id; title=t; author=a; category=c; issued=false;
+    }
+    public int compareTo(Book b){ return title.compareToIgnoreCase(b.title); }
 }
 
 class Member {
-    int memberId; String name, email; List<Integer> issuedBooks=new ArrayList<>();
-    Member(int id,String n,String e){ memberId=id; name=n; email=e; }
-    void displayMemberDetails(){ System.out.println(memberId+" "+name+" "+email+" "+issuedBooks); }
-    void addIssuedBook(int id){ issuedBooks.add(id); }
-    void returnIssuedBook(int id){ issuedBooks.remove((Integer)id); }
+    int id; String name, email;
+    List<Integer> issued = new ArrayList<>();
+    Member(int id, String n, String e){ this.id=id; name=n; email=e; }
 }
 
-class LibraryManager {
-    Map<Integer,Book> books=new HashMap<>();
-    Map<Integer,Member> members=new HashMap<>();
+public class LibrarySystem {
+    Map<Integer,Book> books = new HashMap<>();
+    Map<Integer,Member> members = new HashMap<>();
+    Scanner sc = new Scanner(System.in);
 
-    void addBook() throws Exception {
-        Scanner sc=new Scanner(System.in);
+    // ------------ FILE LOAD ------------
+    void load() {
+        try {
+            File booksFile = new File("books.txt");
+            File membersFile = new File("members.txt");
+            booksFile.createNewFile();
+            membersFile.createNewFile();
+
+            BufferedReader br = new BufferedReader(new FileReader("books.txt"));
+            String s;
+            while((s=br.readLine())!=null){
+                String a[] = s.split(",");
+                Book b = new Book(Integer.parseInt(a[0]), a[1], a[2], a[3]);
+                b.issued = Boolean.parseBoolean(a[4]);
+                books.put(b.id, b);
+            }
+            br.close();
+
+            br = new BufferedReader(new FileReader("members.txt"));
+            while((s=br.readLine())!=null){
+                String a[] = s.split(",");
+                Member m = new Member(Integer.parseInt(a[0]), a[1], a[2]);
+                members.put(m.id, m);
+            }
+            br.close();
+
+        } catch(Exception e){}
+    }
+
+    // ------------ FILE SAVE ------------
+    void save() {
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter("books.txt"));
+            for(Book b : books.values()){
+                bw.write(b.id+","+b.title+","+b.author+","+b.category+","+b.issued);
+                bw.newLine();
+            }
+            bw.close();
+
+            bw = new BufferedWriter(new FileWriter("members.txt"));
+            for(Member m : members.values()){
+                bw.write(m.id+","+m.name+","+m.email);
+                bw.newLine();
+            }
+            bw.close();
+        } catch(Exception e){}
+    }
+
+    // ------------ OPERATIONS ------------
+    void addBook(){
+        System.out.print("ID: "); int id=sc.nextInt(); sc.nextLine();
         System.out.print("Title: "); String t=sc.nextLine();
         System.out.print("Author: "); String a=sc.nextLine();
         System.out.print("Category: "); String c=sc.nextLine();
-        int id=books.size()+101;
-        books.put(id,new Book(id,t,a,c)); saveToFile();
-        System.out.println("Book ID: "+id);
+        books.put(id,new Book(id,t,a,c));
+        save();
+        System.out.println("Book Added.\n");
     }
 
-    void addMember() throws Exception {
-        Scanner sc=new Scanner(System.in);
+    void addMember(){
+        System.out.print("Member ID: "); int id=sc.nextInt(); sc.nextLine();
         System.out.print("Name: "); String n=sc.nextLine();
         System.out.print("Email: "); String e=sc.nextLine();
-        int id=members.size()+201;
-        members.put(id,new Member(id,n,e)); saveToFile();
-        System.out.println("Member ID: "+id);
+        members.put(id,new Member(id,n,e));
+        save();
+        System.out.println("Member Added.\n");
     }
 
-    void issueBook() throws Exception {
-        Scanner sc=new Scanner(System.in);
+    void issueBook(){
         System.out.print("Book ID: "); int bid=sc.nextInt();
         System.out.print("Member ID: "); int mid=sc.nextInt();
-        if(books.containsKey(bid)&&members.containsKey(mid)&&!books.get(bid).isIssued){
-            books.get(bid).markAsIssued(); members.get(mid).addIssuedBook(bid); saveToFile();
-            System.out.println("Issued");
-        } else System.out.println("Not possible");
+        if(books.containsKey(bid) && members.containsKey(mid)){
+            Book b=books.get(bid);
+            if(!b.issued){
+                b.issued=true;
+                members.get(mid).issued.add(bid);
+                save();
+                System.out.println("Book Issued.\n");
+            } else System.out.println("Already Issued.\n");
+        }
     }
 
-    void returnBook() throws Exception {
-        Scanner sc=new Scanner(System.in);
+    void returnBook(){
         System.out.print("Book ID: "); int bid=sc.nextInt();
-        System.out.print("Member ID: "); int mid=sc.nextInt();
-        if(books.containsKey(bid)&&members.containsKey(mid)){
-            books.get(bid).markAsReturned(); members.get(mid).returnIssuedBook(bid); saveToFile();
-            System.out.println("Returned");
+        if(books.containsKey(bid)){
+            books.get(bid).issued=false;
+            save();
+            System.out.println("Returned.\n");
         }
     }
 
-    void searchBooks() {
-        Scanner sc=new Scanner(System.in);
-        System.out.print("Enter keyword: "); String k=sc.nextLine().toLowerCase();
-        books.values().stream().filter(b->b.title.toLowerCase().contains(k)||
-                b.author.toLowerCase().contains(k)|| b.category.toLowerCase().contains(k))
-            .forEach(Book::displayBookDetails);
+    void search(){
+        System.out.print("Search word: "); String key=sc.next();
+        for(Book b:books.values())
+            if(b.title.toLowerCase().contains(key.toLowerCase()))
+                System.out.println(b.id+" | "+b.title+" | "+b.author+" | "+b.category+" | "+b.issued);
     }
 
-    void sortBooks() {
-        books.values().stream().sorted(Comparator.comparing(b->b.title))
-            .forEach(Book::displayBookDetails);
+    void sortBooks(){
+        List<Book> list = new ArrayList<>(books.values());
+        Collections.sort(list);
+        for(Book b:list)
+            System.out.println(b.id+" | "+b.title+" | "+b.author);
     }
 
-    void saveToFile() throws Exception {
-        BufferedWriter bw=new BufferedWriter(new FileWriter("books.txt"));
-        for(Book b:books.values()) bw.write(b.bookId+","+b.title+","+b.author+","+b.category+","+b.isIssued+"\n");
-        bw.close();
-        BufferedWriter bw2=new BufferedWriter(new FileWriter("members.txt"));
-        for(Member m:members.values()) bw2.write(m.memberId+","+m.name+","+m.email+","+m.issuedBooks+"\n");
-        bw2.close();
-    }
+    // ------------ MAIN MENU ------------
+    public static void main(String[] args) {
+        LibrarySystem L = new LibrarySystem();
+        L.load();
+        Scanner sc = new Scanner(System.in);
+        int ch;
 
-    void loadFromFile() throws Exception {
-        File f=new File("books.txt"); if(f.exists()){
-            BufferedReader br=new BufferedReader(new FileReader(f)); String l;
-            while((l=br.readLine())!=null){
-                String[] x=l.split(","); Book b=new Book(Integer.parseInt(x[0]),x[1],x[2],x[3]); b.isIssued=Boolean.parseBoolean(x[4]); books.put(b.bookId,b);
-            } br.close();
-        }
-        File f2=new File("members.txt"); if(f2.exists()){
-            BufferedReader br=new BufferedReader(new FileReader(f2)); String l;
-            while((l=br.readLine())!=null){
-                String[] x=l.split(","); Member m=new Member(Integer.parseInt(x[0]),x[1],x[2]); members.put(m.memberId,m);
-            } br.close();
-        }
-    }
-}
-
-public class CityLibrary {
-    public static void main(String[] args) throws Exception {
-        LibraryManager lm=new LibraryManager(); lm.loadFromFile();
-        Scanner sc=new Scanner(System.in);
-        while(true){
-            System.out.println("1.Add Book 2.Add Member 3.Issue 4.Return 5.Search 6.Sort 7.Exit");
-            int ch=sc.nextInt();
+        do {
+            System.out.println("\n1.Add Book\n2.Add Member\n3.Issue\n4.Return\n5.Search\n6.Sort\n7.Exit");
+            ch = sc.nextInt();
             switch(ch){
-                case 1: lm.addBook(); break;
-                case 2: lm.addMember(); break;
-                case 3: lm.issueBook(); break;
-                case 4: lm.returnBook(); break;
-                case 5: lm.searchBooks(); break;
-                case 6: lm.sortBooks(); break;
-                case 7: lm.saveToFile(); System.exit(0);
+                case 1: L.addBook(); break;
+                case 2: L.addMember(); break;
+                case 3: L.issueBook(); break;
+                case 4: L.returnBook(); break;
+                case 5: L.search(); break;
+                case 6: L.sortBooks(); break;
             }
-        }
+        } while(ch!=7);
+
+        L.save();
     }
 }
